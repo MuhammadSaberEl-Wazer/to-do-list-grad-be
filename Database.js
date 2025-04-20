@@ -3,7 +3,10 @@ const Note = require("./schemas/note");
 
 class Database {
   constructor() {
-    this.url = "mongodb://localhost:27017/notaty";
+    // this.url = "mongodb://localhost:27017/notaty";
+    this.url =
+      process.env.MONGODB_URL ||
+      "mongodb+srv://notaty_user:notaty_pass123@cluster0.yduoa5x.mongodb.net/notaty?retryWrites=true&w=majority&appName=Cluster0";
   }
 
   connect() {
@@ -45,8 +48,6 @@ class Database {
     });
   }
 
-
- 
   getNoteById(id) {
     return new Promise((resolve, reject) => {
       Note.findById(id)
@@ -61,11 +62,9 @@ class Database {
 
   updateNote(note) {
     return new Promise((resolve, reject) => {
-      note["updateDate"] = new Data();
+      note["updateDate"] = new Date();
       Note.findByIdAndUpdate(note["_id"], note)
         .then((data) => {
-          console.log("data", data);
-
           resolve(data);
         })
         .catch((err) => {
@@ -86,29 +85,22 @@ class Database {
     });
   }
 
-
-
-
-  getNotesByTitle(noteTitle){
+  getNotesByTitle(noteTitle) {
     return new Promise((resolve, reject) => {
-        const query = {
-            title:{
-                $regex: new RegExp(noteTitle, "i")
-            }
-        }
-        Note.find(query)
-          .then((data) => {
-            resolve(data);
-          })
-          .catch((err) => {
-            reject(err);
-          });
-      });
+      const query = {
+        title: {
+          $regex: new RegExp(noteTitle, "i"),
+        },
+      };
+      Note.find(query)
+        .then((data) => {
+          resolve(data);
+        })
+        .catch((err) => {
+          reject(err);
+        });
+    });
   }
-
-
-
-
 }
 
 module.exports = Database;

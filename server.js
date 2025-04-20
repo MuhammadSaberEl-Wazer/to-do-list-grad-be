@@ -51,6 +51,7 @@ app.get("/notes/:id", (req, res) => {
 });
 
 app.put("/notes", (req, res) => {
+
   db.updateNote(req.body)
     .then((data) => {
       if (!data) {
@@ -81,7 +82,7 @@ app.delete("/notes/:id", (req, res) => {
 
 app.post("/notes", (req, res) => {
   const body = req.body;
-  console.log("body: " + body);
+
   db.addNote(body)
     .then((data) => {
       res.send(data);
@@ -91,7 +92,7 @@ app.post("/notes", (req, res) => {
     });
 });
 
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);

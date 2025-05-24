@@ -9,13 +9,18 @@ const noteSchema = mongoose.Schema({
     type: String,
     required: true,
   },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'user',
+    required: true
+  },
   createDate: {
     type: Date,
-    require: true,
+    required: true,
   },
   updateDate: {
     type: Date,
-    require: true,
+    required: true,
   },
 });
 

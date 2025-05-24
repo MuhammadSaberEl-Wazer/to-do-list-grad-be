@@ -1,5 +1,7 @@
 const mongoose = require("mongoose");
 const Note = require("./schemas/note");
+const User = require("./schemas/user");
+const bcrypt = require("bcrypt");
 
 class Database {
   constructor() {
@@ -20,86 +22,115 @@ class Database {
       });
   }
 
-  addNote(note) {
-    return new Promise((resolve, reject) => {
-      note["createDate"] = new Date();
-      note["updateDate"] = new Date();
-      let newNote = new Note(note);
-      newNote
-        .save()
-        .then((doc) => {
-          resolve(doc);
-        })
-        .catch((err) => {
-          reject(doc);
-        });
-    });
+  async registerUser(userData) {
+    try {
+      // Check if user already exists
+      const existingUser = await User.findOne({ email: userData.email });
+      if (existingUser) {
+        throw new Error('Email already registered');
+      }
+
+      // Hash password
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(userData.password, salt);
+
+      // Create new user
+      const user = new User({
+        firstName: userData.firstName,
+        email: userData.email,
+        password: hashedPassword,
+        createDate: new Date()
+      });
+
+      const savedUser = await user.save();
+      return { ...savedUser.toObject(), password: undefined };
+    } catch (error) {
+      throw error;
+    }
   }
 
-  getNotes() {
-    return new Promise((resolve, reject) => {
-      Note.find({})
-        .then((data) => {
-          resolve(data);
-        })
-        .catch((err) => {
-          reject(err);
-        });
-    });
+  async loginUser(email, password) {
+    try {
+      const user = await User.findOne({ email });
+      if (!user) {
+        throw new Error('Invalid email or password');
+      }
+
+      const validPassword = await bcrypt.compare(password, user.password);
+      if (!validPassword) {
+        throw new Error('Invalid email or password');
+      }
+
+      return { ...user.toObject(), password: undefined };
+    } catch (error) {
+      throw error;
+    }
   }
 
-  getNoteById(id) {
-    return new Promise((resolve, reject) => {
-      Note.findById(id)
-        .then((data) => {
-          resolve(data);
-        })
-        .catch((err) => {
-          reject(err);
-        });
-    });
+  // Update note methods to include userId
+  async addNote(note, userId) {
+    try {
+      const newNote = new Note({
+        ...note,
+        userId,
+        createDate: new Date(),
+        updateDate: new Date()
+      });
+      return await newNote.save();
+    } catch (error) {
+      throw error;
+    }
   }
 
-  updateNote(note) {
-    return new Promise((resolve, reject) => {
-      note["updateDate"] = new Date();
-      Note.findByIdAndUpdate(note["_id"], note)
-        .then((data) => {
-          resolve(data);
-        })
-        .catch((err) => {
-          reject(err);
-        });
-    });
+  async getNotes(userId) {
+    try {
+      return await Note.find({ userId });
+    } catch (error) {
+      throw error;
+    }
   }
 
-  deleteNote(id) {
-    return new Promise((resolve, reject) => {
-      Note.findByIdAndDelete(id)
-        .then((data) => {
-          resolve(data);
-        })
-        .catch((err) => {
-          reject(err);
-        });
-    });
+  async getNotesByTitle(title, userId) {
+    try {
+      return await Note.find({
+        userId,
+        title: { $regex: title, $options: 'i' }
+      });
+    } catch (error) {
+      throw error;
+    }
   }
-
-  getNotesByTitle(noteTitle) {
-    return new Promise((resolve, reject) => {
-      const query = {
-        title: {
-          $regex: new RegExp(noteTitle, "i"),
+  async updateNote(note, userId) {
+    try {
+      const updatedNote = await Note.findOneAndUpdate(
+        { _id: note._id, userId },
+        {
+          ...note,
+          updateDate: new Date()
         },
-      };
-      Note.find(query)
-        .then((data) => {
-          resolve(data);
-        })
-        .catch((err) => {
-          reject(err);
-        });
-    });
+        { new: true }
+      );
+      if (!updatedNote) {
+        throw new Error('Note not found or unauthorized');
+      }
+      return updatedNote;
+    } catch (error) {
+      throw error;
+    }
+  }
+  async getNoteById(noteId, userId) {
+    try {
+      return await Note.findOne({ _id: noteId, userId });
+    } catch (error) {
+      throw error;
+    }
+  }
+  async deleteNoteById(noteId, userId) {
+    try {
+      return await Note.findOneAndDelete({ _id: noteId, userId });
+    } catch (error) {
+      throw error;
+    }
   }
 }
 

@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Note = require("./schemas/note");
 const User = require("./schemas/user");
+const Tag = require("./schemas/tag");
 const bcrypt = require("bcrypt");
 
 class Database {
@@ -27,7 +28,7 @@ class Database {
       // Check if user already exists
       const existingUser = await User.findOne({ email: userData.email });
       if (existingUser) {
-        throw new Error('Email already registered');
+        throw new Error("Email already registered");
       }
 
       // Hash password
@@ -39,7 +40,7 @@ class Database {
         firstName: userData.firstName,
         email: userData.email,
         password: hashedPassword,
-        createDate: new Date()
+        createDate: new Date(),
       });
 
       const savedUser = await user.save();
@@ -53,12 +54,12 @@ class Database {
     try {
       const user = await User.findOne({ email });
       if (!user) {
-        throw new Error('Invalid email or password');
+        throw new Error("Invalid email or password");
       }
 
       const validPassword = await bcrypt.compare(password, user.password);
       if (!validPassword) {
-        throw new Error('Invalid email or password');
+        throw new Error("Invalid email or password");
       }
 
       return { ...user.toObject(), password: undefined };
@@ -73,8 +74,9 @@ class Database {
       const newNote = new Note({
         ...note,
         userId,
+        tags: note.tags || [],
         createDate: new Date(),
-        updateDate: new Date()
+        updateDate: new Date(),
       });
       return await newNote.save();
     } catch (error) {
@@ -84,7 +86,15 @@ class Database {
 
   async getNotes(userId) {
     try {
-      return await Note.find({ userId });
+      return await Note.find({ userId }).populate("tags");
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getAllTags() {
+    try {
+      return await Tag.find({});
     } catch (error) {
       throw error;
     }
@@ -94,7 +104,7 @@ class Database {
     try {
       return await Note.find({
         userId,
-        title: { $regex: title, $options: 'i' }
+        title: { $regex: title, $options: "i" },
       });
     } catch (error) {
       throw error;
@@ -106,12 +116,12 @@ class Database {
         { _id: note._id, userId },
         {
           ...note,
-          updateDate: new Date()
+          updateDate: new Date(),
         },
         { new: true }
       );
       if (!updatedNote) {
-        throw new Error('Note not found or unauthorized');
+        throw new Error("Note not found or unauthorized");
       }
       return updatedNote;
     } catch (error) {
@@ -127,7 +137,9 @@ class Database {
   }
   async deleteNoteById(noteId, userId) {
     try {
-      return await Note.findOneAndDelete({ _id: noteId, userId });
+      return await Note.findOneAndDelete({ _id: noteId, userId }).populate(
+        "tags"
+      );
     } catch (error) {
       throw error;
     }

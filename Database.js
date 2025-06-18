@@ -6,7 +6,6 @@ const bcrypt = require("bcrypt");
 
 class Database {
   constructor() {
-    // this.url = "mongodb://localhost:27017/notaty";
     this.url =
       process.env.MONGODB_URL ||
       "mongodb+srv://notaty_user:notaty_pass123@cluster0.yduoa5x.mongodb.net/notaty?retryWrites=true&w=majority&appName=Cluster0";
@@ -14,7 +13,7 @@ class Database {
 
   connect() {
     mongoose
-      .connect(this.url) // Just the connection string is sufficient
+      .connect(this.url)
       .then(() => {
         console.log("Database connected successfully!");
       })
@@ -25,17 +24,14 @@ class Database {
 
   async registerUser(userData) {
     try {
-      // Check if user already exists
       const existingUser = await User.findOne({ email: userData.email });
       if (existingUser) {
         throw new Error("Email already registered");
       }
 
-      // Hash password
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(userData.password, salt);
 
-      // Create new user
       const user = new User({
         firstName: userData.firstName,
         email: userData.email,
@@ -68,7 +64,6 @@ class Database {
     }
   }
 
-  // Update note methods to include userId
   async addNote(note, userId) {
     try {
       const newNote = new Note({
@@ -110,6 +105,7 @@ class Database {
       throw error;
     }
   }
+
   async updateNote(note, userId) {
     try {
       const updatedNote = await Note.findOneAndUpdate(
@@ -128,6 +124,7 @@ class Database {
       throw error;
     }
   }
+
   async getNoteById(noteId, userId) {
     try {
       return await Note.findOne({ _id: noteId, userId });
@@ -135,6 +132,7 @@ class Database {
       throw error;
     }
   }
+
   async deleteNoteById(noteId, userId) {
     try {
       return await Note.findOneAndDelete({ _id: noteId, userId }).populate(

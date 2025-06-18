@@ -142,8 +142,6 @@ mongoose
 
     // عرض جميع الوسوم بعد الإضافة
     const allTags = await Tag.find();
-    console.log("جميع الوسوم في قاعدة البيانات:");
-    console.log(allTags);
 
     mongoose.disconnect();
   })

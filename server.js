@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
-const jwt = require('jsonwebtoken');
+const jwt = require("jsonwebtoken");
 
 const app = express();
 const Database = require("./Database");
@@ -13,15 +13,15 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // JWT secret key
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
 // Authentication middleware
 const authenticateToken = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
 
   if (!token) {
-    return res.status(401).json({ error: 'Access denied' });
+    return res.status(401).json({ error: "Access denied" });
   }
 
   try {
@@ -29,7 +29,7 @@ const authenticateToken = (req, res, next) => {
     req.user = verified;
     next();
   } catch (error) {
-    res.status(400).json({ error: 'Invalid token' });
+    res.status(400).json({ error: "Invalid token" });
   }
 };
 
@@ -61,11 +61,20 @@ app.get("/notes", authenticateToken, async (req, res) => {
     const { title } = req.query;
     const userId = req.user.userId;
 
-    const notes = title 
+    const notes = title
       ? await db.getNotesByTitle(title, userId)
       : await db.getNotes(userId);
 
     res.json(notes);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/tags", authenticateToken, async (req, res) => {
+  try {
+    const tags = await db.getAllTags();
+    res.json(tags);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -97,7 +106,7 @@ app.get("/notes/:id", authenticateToken, async (req, res) => {
     const noteId = req.params.id;
     const note = await db.getNoteById(noteId, userId);
     if (!note) {
-      return res.status(404).json({ error: 'Note not found' });
+      return res.status(404).json({ error: "Note not found" });
     }
     res.json(note);
   } catch (error) {
@@ -111,13 +120,14 @@ app.delete("/notes/:id", authenticateToken, async (req, res) => {
     const noteId = req.params.id;
     const result = await db.deleteNoteById(noteId, userId);
     if (!result) {
-      return res.status(404).json({ error: 'Note not found' });
+      return res.status(404).json({ error: "Note not found" });
     }
-    res.json({ message: 'Note deleted successfully' });
+    res.json({ message: "Note deleted successfully" });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
+
 const port = process.env.PORT || 3000;
 
 app.listen(port, () => {
